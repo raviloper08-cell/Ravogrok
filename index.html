@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ravo — маркетплейс</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            gold: { DEFAULT: '#D4AF37', light: '#F5E6A3', dark: '#B8860B' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root { --bg: #fff; --bg2: #f8f8f8; --card: #fff; --text: #0a0a0a; --muted: #666; --border: #e5e5e5; }
+    .dark { --bg: #0a0a0a; --bg2: #121212; --card: #1a1a1a; --text: #f5f5f5; --muted: #a0a0a0; --border: #2a2a2a; }
+    body { background: var(--bg); color: var(--text); transition: background .3s, color .3s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; }
+    .bg-main { background: var(--bg); }
+    .bg-sec { background: var(--bg2); }
+    .bg-card { background: var(--card); }
+    .text-main { color: var(--text); }
+    .text-muted { color: var(--muted); }
+    .border-th { border-color: var(--border); }
+    .gold-grad { background: linear-gradient(135deg, #D4AF37, #F5E6A3, #B8860B); }
+    .gold-text { background: linear-gradient(135deg, #D4AF37, #F5E6A3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .btn-gold { background: linear-gradient(135deg, #D4AF37, #B8860B); color: #0a0a0a; font-weight: 600; transition: all .25s; }
+    .btn-gold:hover { background: linear-gradient(135deg, #F5E6A3, #D4AF37); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(212,175,55,.4); }
+    .card-h:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,.12); }
+    .dark .card-h:hover { box-shadow: 0 12px 40px rgba(212,175,55,.15); }
+    .card-h { transition: all .3s cubic-bezier(.4,0,.2,1); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 3px; }
+    .fade-in { animation: fadeIn .4s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+</head>
+<body class="bg-main text-main">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const PRODUCTS = [
+      { id:1, name:'Смартфон Ravo Pro Max 256GB', price:89990, oldPrice:99990, image:'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop', rating:4.9, reviews:1247, category:'Электроника', brand:'Ravo', badge:'Хит' },
+      { id:2, name:'Беспроводные наушники Ravo Air', price:12990, oldPrice:15990, image:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop', rating:4.8, reviews:892, category:'Электроника', brand:'Ravo', badge:'-19%' },
+      { id:3, name:'Умные часы Ravo Watch S', price:24990, image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop', rating:4.7, reviews:543, category:'Электроника', brand:'Ravo' },
+      { id:4, name:'Кроссовки Urban Gold Edition', price:8990, oldPrice:11990, image:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop', rating:4.6, reviews:2103, category:'Обувь', brand:'Urban', badge:'Новинка' },
+      { id:5, name:'Куртка премиум чёрная с золотом', price:15990, image:'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop', rating:4.9, reviews:421, category:'Одежда', brand:'Ravo Style' },
+      { id:6, name:'Рюкзак кожаный Gold Line', price:7490, oldPrice:9990, image:'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop', rating:4.5, reviews:678, category:'Аксессуары', brand:'Gold Line' },
+      { id:7, name:'Парфюм Ravo Noir 100ml', price:5990, image:'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=400&fit=crop', rating:4.8, reviews:1120, category:'Красота', brand:'Ravo', badge:'Хит' },
+      { id:8, name:'Наушники накладные Ravo Studio', price:18990, oldPrice:22990, image:'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400&h=400&fit=crop', rating:4.7, reviews:334, category:'Электроника', brand:'Ravo' },
+      { id:9, name:'Платье вечернее золотое', price:12990, image:'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop', rating:4.9, reviews:289, category:'Одежда', brand:'Ravo Style', badge:'Эксклюзив' },
+      { id:10, name:'Колонка портативная Ravo Boom', price:4990, oldPrice:6990, image:'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop', rating:4.6, reviews:1567, category:'Электроника', brand:'Ravo' },
+      { id:11, name:'Солнцезащитные очки Gold Frame', price:3990, image:'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=400&fit=crop', rating:4.4, reviews:812, category:'Аксессуары', brand:'Gold Frame' },
+      { id:12, name:'Чехол для iPhone Premium Gold', price:2490, oldPrice:3490, image:'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&h=400&fit=crop', rating:4.5, reviews:2341, category:'Аксессуары', brand:'Ravo', badge:'-29%' },
+    ];
+
+    const CATS = [
+      { id:'all', name:'Все', icon:'✨' },
+      { id:'Электроника', name:'Электроника', icon:'📱' },
+      { id:'Одежда', name:'Одежда', icon:'👕' },
+      { id:'Обувь', name:'Обувь', icon:'👟' },
+      { id:'Аксессуары', name:'Аксессуары', icon:'👜' },
+      { id:'Красота', name:'Красота', icon:'💄' },
+    ];
+
+    function useLocal(key, init) {
+      const [v, setV] = useState(() => {
+        try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; }
+      });
+      useEffect(() => { localStorage.setItem(key, JSON.stringify(v)); }, [key, v]);
+      return [v, setV];
+    }
+
+    function Header({ page, setPage, theme, toggleTheme, cartCount, favCount, query, setQuery }) {
+      return (
+        <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-th" style={{background: theme==='dark'?'rgba(10,10,10,.92)':'rgba(255,255,255,.92)'}}>
+          <div className="hidden md:flex items-center justify-between px-4 lg:px-8 py-1.5 text-xs text-muted border-b border-th">
+            <div className="flex gap-4"><span>📍 Москва</span><span>Доставка бесплатно от 2000 ₽</span></div>
+            <div className="flex gap-4"><span className="hover:text-gold cursor-pointer">Продавать на Ravo</span><span className="hover:text-gold cursor-pointer">Помощь</span></div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-8 py-3">
+            <button onClick={() => setPage('home')} className="flex items-center gap-2 shrink-0 group">
+              <div className="w-9 h-9 rounded-xl gold-grad flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                <span className="text-black font-black text-lg">R</span>
+              </div>
+              <span className="text-2xl font-black tracking-tight gold-text hidden sm:block">Ravo</span>
+            </button>
+            <button className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sec border border-th text-sm font-medium hover:border-gold transition-all">
+              ☰ Каталог
+            </button>
+            <div className="flex-1 max-w-2xl relative">
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Найти на Ravo"
+                className="w-full pl-4 pr-12 py-2.5 rounded-xl bg-sec border border-th focus:border-gold focus:outline-none text-sm"
+                style={{background: 'var(--bg2)', color: 'var(--text)'}}
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg btn-gold text-sm">🔍</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={toggleTheme} className="p-2.5 rounded-xl hover:bg-sec transition-colors text-lg" title="Тема">
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+              <button onClick={() => setPage('favorites')} className="relative p-2.5 rounded-xl hover:bg-sec transition-colors text-lg">
+                ❤️
+                {favCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-gold text-black text-[10px] font-bold px-1">{favCount}</span>}
+              </button>
+              <button onClick={() => setPage('cart')} className="relative p-2.5 rounded-xl hover:bg-sec transition-colors text-lg">
+                🛒
+                {cartCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-gold text-black text-[10px] font-bold px-1">{cartCount}</span>}
+              </button>
+              <button onClick={() => setPage('profile')} className="hidden sm:flex items-center gap-2 p-2.5 rounded-xl hover:bg-sec transition-colors text-sm font-medium">
+                👤 <span className="hidden lg:inline">Профиль</span>
+              </button>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    function ProductCard({ p, index, onAdd, onFav, isFav, onOpen }) {
+      return (
+        <div className="group relative bg-card rounded-2xl border border-th overflow-hidden card-h fade-in" style={{animationDelay: `${index*0.04}s`}}>
+          <div className="relative aspect-square overflow-hidden bg-sec cursor-pointer" onClick={() => onOpen(p)}>
+            <img src={p.image} alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+            {p.badge && <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-gold text-black">{p.badge}</span>}
+            <button onClick={e => { e.stopPropagation(); onFav(p.id); }} className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white text-sm">
+              {isFav ? '❤️' : '🤍'}
+            </button>
+          </div>
+          <div className="p-3 sm:p-4">
+            <div className="flex items-center gap-1 mb-1.5 text-xs">
+              <span className="text-gold">★</span>
+              <span className="font-semibold">{p.rating}</span>
+              <span className="text-muted">· {p.reviews.toLocaleString('ru-RU')}</span>
+            </div>
+            <h3 className="text-sm font-medium leading-snug line-clamp-2 mb-1 cursor-pointer hover:text-gold transition-colors" onClick={() => onOpen(p)}>{p.name}</h3>
+            <p className="text-xs text-muted mb-2">{p.brand}</p>
+            <div className="flex items-end justify-between gap-2">
+              <div>
+                <span className="text-lg font-bold">{p.price.toLocaleString('ru-RU')} ₽</span>
+                {p.oldPrice && <span className="text-xs text-muted line-through ml-1.5">{p.oldPrice.toLocaleString('ru-RU')} ₽</span>}
+              </div>
+              <button onClick={() => onAdd(p)} className="p-2.5 rounded-xl btn-gold shadow-md text-sm">🛒</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Home({ products, onAdd, onFav, favs, onOpen, cat, setCat, query }) {
+      const filtered = useMemo(() => {
+        let list = products;
+        if (query) {
+          const q = query.toLowerCase();
+          list = list.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+        }
+        if (cat !== 'all') list = list.filter(p => p.category === cat);
+        return list;
+      }, [products, query, cat]);
+
+      return (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6">
+          <div className="relative rounded-2xl overflow-hidden mb-8 gold-grad p-6 sm:p-10 fade-in">
+            <h1 className="text-2xl sm:text-4xl font-black text-black mb-2 tracking-tight">Ravo — премиум шопинг</h1>
+            <p className="text-black/80 text-sm sm:text-base mb-5">Золотой стандарт доставки. Миллионы товаров с быстрой доставкой по всей России.</p>
+            <button className="px-6 py-2.5 rounded-xl bg-black text-gold font-semibold text-sm hover:bg-black/90 transition-all shadow-lg">Смотреть каталог</button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 -mx-1 px-1">
+            {CATS.map(c => (
+              <button key={c.id} onClick={() => setCat(c.id)}
+                className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${cat===c.id ? 'bg-gold text-black shadow-md' : 'bg-card border border-th hover:border-gold'}`}>
+                <span>{c.icon}</span>{c.name}
+              </button>
+            ))}
+          </div>
+          {query && <p className="text-sm text-muted mb-4">По запросу «{query}» найдено {filtered.length}</p>}
+          {filtered.length === 0 ? (
+            <div className="text-center py-20"><p className="text-lg font-medium mb-2">Ничего не найдено</p></div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {filtered.map((p,i) => (
+                <ProductCard key={p.id} p={p} index={i} onAdd={onAdd} onFav={onFav} isFav={favs.includes(p.id)} onOpen={onOpen} />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function Cart({ cart, updateQty, remove, total, clear, setPage }) {
+      if (!cart.length) return (
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center fade-in">
+          <div className="text-5xl mb-4">🛒</div>
+          <h2 className="text-xl font-bold mb-2">Корзина пуста</h2>
+          <p className="text-muted text-sm mb-4">Добавьте товары из каталога</p>
+          <button onClick={() => setPage('home')} className="px-6 py-2.5 rounded-xl btn-gold text-sm">В каталог</button>
+        </div>
+      );
+      return (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 fade-in">
+          <div className="flex justify-between mb-6">
+            <h1 className="text-2xl font-bold">Корзина <span className="text-muted text-lg font-normal">({cart.length})</span></h1>
+            <button onClick={clear} className="text-sm text-muted hover:text-red-500">Очистить</button>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-3">
+              {cart.map(({product:p, qty}) => (
+                <div key={p.id} className="flex gap-4 p-4 rounded-2xl bg-card border border-th">
+                  <img src={p.image} className="w-24 h-24 rounded-xl object-cover bg-sec shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm line-clamp-2">{p.name}</p>
+                    <p className="text-xs text-muted mt-1">{p.brand}</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center gap-1 bg-sec rounded-xl p-1">
+                        <button onClick={() => updateQty(p.id, qty-1)} className="p-1.5 rounded-lg hover:bg-card w-8">−</button>
+                        <span className="w-8 text-center text-sm font-semibold">{qty}</span>
+                        <button onClick={() => updateQty(p.id, qty+1)} className="p-1.5 rounded-lg hover:bg-card w-8">+</button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold">{(p.price*qty).toLocaleString('ru-RU')} ₽</span>
+                        <button onClick={() => remove(p.id)} className="text-muted hover:text-red-500">🗑</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-5 rounded-2xl bg-card border border-th h-fit space-y-4">
+              <h3 className="font-bold">Итого</h3>
+              <div className="flex justify-between text-sm"><span className="text-muted">Товары</span><span>{total.toLocaleString('ru-RU')} ₽</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted">Доставка</span><span className="text-green-500">Бесплатно</span></div>
+              <div className="border-t border-th pt-3 flex justify-between">
+                <span className="font-bold">К оплате</span>
+                <span className="text-xl font-black gold-text">{total.toLocaleString('ru-RU')} ₽</span>
+              </div>
+              <button className="w-full py-3 rounded-xl btn-gold text-sm font-semibold shadow-lg">Оформить заказ</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Favorites({ favs, products, onAdd, onFav, onOpen, setPage }) {
+      const list = products.filter(p => favs.includes(p.id));
+      if (!list.length) return (
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center fade-in">
+          <div className="text-5xl mb-4">❤️</div>
+          <h2 className="text-xl font-bold mb-2">В избранном пусто</h2>
+          <button onClick={() => setPage('home')} className="mt-4 px-6 py-2.5 rounded-xl btn-gold text-sm">В каталог</button>
+        </div>
+      );
+      return (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 fade-in">
+          <h1 className="text-2xl font-bold mb-6">Избранное <span className="text-muted text-lg font-normal">({list.length})</span></h1>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {list.map((p,i) => <ProductCard key={p.id} p={p} index={i} onAdd={onAdd} onFav={onFav} isFav={true} onOpen={onOpen} />)}
+          </div>
+        </div>
+      );
+    }
+
+    function Profile({ theme, toggleTheme, loggedIn, setLoggedIn }) {
+      const [phone, setPhone] = useState('');
+      if (!loggedIn) return (
+        <div className="max-w-md mx-auto px-4 py-16 fade-in">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl gold-grad mx-auto flex items-center justify-center mb-4 shadow-lg">
+              <span className="text-black font-black text-2xl">R</span>
+            </div>
+            <h1 className="text-2xl font-bold mb-1">Вход в Ravo</h1>
+            <p className="text-muted text-sm">Войдите, чтобы видеть заказы и избранное</p>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Телефон</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+7 (999) 000-00-00"
+                className="w-full px-4 py-3 rounded-xl border border-th focus:border-gold focus:outline-none text-sm"
+                style={{background:'var(--bg2)', color:'var(--text)'}} />
+            </div>
+            <button onClick={() => setLoggedIn(true)} className="w-full py-3 rounded-xl btn-gold text-sm font-semibold shadow-lg">Получить код</button>
+          </div>
+        </div>
+      );
+      return (
+        <div className="max-w-lg mx-auto px-4 py-6 fade-in">
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-card border border-th mb-6">
+            <div className="w-14 h-14 rounded-full gold-grad flex items-center justify-center text-2xl">👤</div>
+            <div>
+              <h2 className="font-bold text-lg">Пользователь Ravo</h2>
+              <p className="text-sm text-muted">+7 (999) •••-••-42</p>
+            </div>
+          </div>
+          {['Мои заказы','Адреса доставки','Способы оплаты','Настройки'].map(l => (
+            <div key={l} className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-sec transition-colors cursor-pointer">
+              <span className="text-gold">▸</span>
+              <span className="flex-1 font-medium text-sm">{l}</span>
+            </div>
+          ))}
+          <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-sec transition-colors text-sm font-medium">
+            {theme==='dark'?'☀️ Светлая тема':'🌙 Тёмная тема'}
+          </button>
+          <button onClick={() => setLoggedIn(false)} className="w-full mt-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 text-sm font-medium">Выйти</button>
+        </div>
+      );
+    }
+
+    function ProductPage({ product, onAdd, onFav, isFav, setPage }) {
+      if (!product) return <div className="text-center py-20">Товар не найден</div>;
+      return (
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 fade-in">
+          <button onClick={() => setPage('home')} className="text-sm text-muted hover:text-gold mb-4">← Назад</button>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="aspect-square rounded-2xl overflow-hidden bg-sec">
+              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-2 text-sm">
+                <span className="text-gold">★ {product.rating}</span>
+                <span className="text-muted">{product.reviews.toLocaleString('ru-RU')} отзывов</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold mb-1">{product.name}</h1>
+              <p className="text-sm text-muted mb-4">{product.brand} · {product.category}</p>
+              <div className="flex items-baseline gap-3 mb-6">
+                <span className="text-3xl font-black">{product.price.toLocaleString('ru-RU')} ₽</span>
+                {product.oldPrice && <span className="text-lg text-muted line-through">{product.oldPrice.toLocaleString('ru-RU')} ₽</span>}
+              </div>
+              <div className="flex gap-3 mb-8">
+                <button onClick={() => onAdd(product)} className="flex-1 py-3.5 rounded-xl btn-gold text-sm font-semibold shadow-lg">🛒 В корзину</button>
+                <button onClick={() => onFav(product.id)} className={`p-3.5 rounded-xl border ${isFav?'border-gold bg-gold/10':'border-th'}`}>
+                  {isFav?'❤️':'🤍'}
+                </button>
+              </div>
+              <div className="space-y-3 p-4 rounded-2xl bg-sec text-sm">
+                <div>🚚 Бесплатная доставка от 2000 ₽</div>
+                <div>🛡 Гарантия подлинности</div>
+                <div>↩ Лёгкий возврат 14 дней</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Footer() {
+      return (
+        <footer className="mt-auto border-t border-th bg-sec">
+          <div className="max-w-7xl mx-auto px-4 py-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+              <div><h4 className="font-bold mb-3">Покупателям</h4><ul className="space-y-2 text-muted"><li>Как сделать заказ</li><li>Доставка</li><li>Оплата</li><li>Возврат</li></ul></div>
+              <div><h4 className="font-bold mb-3">Партнёрам</h4><ul className="space-y-2 text-muted"><li>Продавать на Ravo</li><li>Курьерам</li></ul></div>
+              <div><h4 className="font-bold mb-3">Компания</h4><ul className="space-y-2 text-muted"><li>О нас</li><li>Контакты</li></ul></div>
+              <div>
+                <h4 className="font-bold mb-3">Приложение</h4>
+                <div className="flex gap-2"><span className="px-3 py-1.5 rounded-lg bg-card border border-th text-xs">App Store</span><span className="px-3 py-1.5 rounded-lg bg-card border border-th text-xs">Google Play</span></div>
+              </div>
+            </div>
+            <div className="mt-10 pt-6 border-t border-th flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg gold-grad flex items-center justify-center"><span className="text-black font-black text-sm">R</span></div>
+                <span className="font-bold gold-text">Ravo</span>
+              </div>
+              <p className="text-xs text-muted">© 2025–2026 Ravo. Все права защищены.</p>
+            </div>
+          </div>
+        </footer>
+      );
+    }
+
+    function App() {
+      const [theme, setTheme] = useLocal('ravo-theme', 'dark');
+      const [page, setPage] = useState('home');
+      const [query, setQuery] = useState('');
+      const [cat, setCat] = useState('all');
+      const [cart, setCart] = useLocal('ravo-cart', []);
+      const [favs, setFavs] = useLocal('ravo-favs', []);
+      const [loggedIn, setLoggedIn] = useState(false);
+      const [selected, setSelected] = useState(null);
+
+      useEffect(() => {
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      }, [theme]);
+
+      const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+      const addToCart = (p) => {
+        setCart(prev => {
+          const ex = prev.find(i => i.product.id === p.id);
+          if (ex) return prev.map(i => i.product.id === p.id ? {...i, qty: i.qty+1} : i);
+          return [...prev, {product: p, qty: 1}];
+        });
+      };
+      const removeFromCart = (id) => setCart(prev => prev.filter(i => i.product.id !== id));
+      const updateQty = (id, qty) => {
+        if (qty < 1) return removeFromCart(id);
+        setCart(prev => prev.map(i => i.product.id === id ? {...i, qty} : i));
+      };
+      const toggleFav = (id) => setFavs(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
+      const cartCount = cart.reduce((s,i) => s+i.qty, 0);
+      const cartTotal = cart.reduce((s,i) => s + i.product.price * i.qty, 0);
+
+      const openProduct = (p) => { setSelected(p); setPage('product'); };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          <Header page={page} setPage={setPage} theme={theme} toggleTheme={toggleTheme}
+            cartCount={cartCount} favCount={favs.length} query={query} setQuery={setQuery} />
+          <main className="flex-1">
+            {page === 'home' && <Home products={PRODUCTS} onAdd={addToCart} onFav={toggleFav} favs={favs} onOpen={openProduct} cat={cat} setCat={setCat} query={query} />}
+            {page === 'cart' && <Cart cart={cart} updateQty={updateQty} remove={removeFromCart} total={cartTotal} clear={() => setCart([])} setPage={setPage} />}
+            {page === 'favorites' && <Favorites favs={favs} products={PRODUCTS} onAdd={addToCart} onFav={toggleFav} onOpen={openProduct} setPage={setPage} />}
+            {page === 'profile' && <Profile theme={theme} toggleTheme={toggleTheme} loggedIn={loggedIn} setLoggedIn={setLoggedIn} />}
+            {page === 'product' && <ProductPage product={selected} onAdd={addToCart} onFav={toggleFav} isFav={selected && favs.includes(selected.id)} setPage={setPage} />}
+          </main>
+          <Footer />
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
