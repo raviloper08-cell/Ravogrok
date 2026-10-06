@@ -1,487 +1,1743 @@
-cat > /home/workdir/artifacts/ravo-simple/index.html << 'ENDOFFILE'
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="theme-color" content="#0a0a0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <title>Ravo</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            gold: { DEFAULT: '#D4AF37', light: '#F5E6A3', dark: '#B8860B' }
-          }
-        }
+  <link rel="manifest" href="data:application/json,{
+    \"name\":\"Ravo\",
+    \"short_name\":\"Ravo\",
+    \"start_url\":\".\",
+    \"display\":\"standalone\",
+    \"background_color\":\"#0a0a0a\",
+    \"theme_color\":\"#0a0a0a\",
+    \"icons\":[]
+  }" />
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --bg-card: #ffffff;
+      --text: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --accent: #c9a227;
+      --accent-hover: #b08d1e;
+      --border: #e5e5ea;
+      --danger: #ff3b30;
+      --success: #34c759;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.06);
+      --nav-height: 72px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0a0a0a;
+      --bg-card: #1c1c1e;
+      --text: #f5f5f7;
+      --text-secondary: #98989d;
+      --border: #2c2c2e;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      overscroll-behavior: none;
+    }
+
+    body {
+      padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+    }
+
+    /* ========== SPLASH ========== */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease, visibility 0.6s;
+    }
+    #splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-r {
+      font-size: 72px;
+      font-weight: 800;
+      color: #c9a227;
+      opacity: 0;
+      transform: scale(0.6);
+      animation: splashR 0.8s 0.2s forwards cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .splash-logo {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: #fff;
+      margin-top: 8px;
+      opacity: 0;
+      animation: splashFade 0.6s 0.7s forwards;
+    }
+    .splash-tagline {
+      font-size: 14px;
+      color: #98989d;
+      margin-top: 16px;
+      opacity: 0;
+      animation: splashFade 0.6s 1.1s forwards;
+    }
+    .splash-line {
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #c9a227, transparent);
+      margin-top: 28px;
+      animation: splashLine 0.8s 1.4s forwards;
+    }
+    @keyframes splashR {
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes splashFade {
+      to { opacity: 1; }
+    }
+    @keyframes splashLine {
+      to { width: 120px; }
+    }
+
+    /* ========== APP ========== */
+    #app {
+      display: none;
+      min-height: 100%;
+    }
+    #app.ready { display: block; }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      padding: 12px 16px 8px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg-card);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform var(--transition);
+      position: relative;
+    }
+    .icon-btn:active { transform: scale(0.9); }
+    .badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    /* Search */
+    .search-wrap {
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 12px 44px 12px 44px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201,162,39,0.15);
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+      padding: 4px;
+    }
+    .search-clear.visible { display: block; }
+
+    /* Sections */
+    .section {
+      padding: 0 16px 20px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Categories */
+    .categories {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 16px 16px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .categories::-webkit-scrollbar { display: none; }
+    .cat-btn {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .cat-btn.active {
+      background: var(--accent);
+      color: #0a0a0a;
+      border-color: var(--accent);
+    }
+    .cat-btn:active { transform: scale(0.95); }
+
+    /* Drop */
+    .drop-card {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2200 100%);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin: 0 16px 20px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    [data-theme="light"] .drop-card {
+      background: linear-gradient(135deg, #2a2200 0%, #1a1a1a 100%);
+    }
+    .drop-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #0a0a0a;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .drop-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .drop-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 8px 0;
+    }
+    .drop-old {
+      font-size: 14px;
+      text-decoration: line-through;
+      color: #98989d;
+      margin-left: 8px;
+    }
+    .drop-timer {
+      font-size: 13px;
+      color: #98989d;
+      margin-bottom: 14px;
+    }
+    .drop-btn {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform var(--transition);
+    }
+    .drop-btn:active { transform: scale(0.95); }
+
+    /* Product Grid */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .product-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: transform var(--transition), box-shadow var(--transition);
+      position: relative;
+    }
+    .product-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .product-card:active {
+      transform: scale(0.97);
+    }
+    .product-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: #e5e5ea;
+      display: block;
+    }
+    [data-theme="dark"] .product-img {
+      background: #2c2c2e;
+    }
+    .product-info {
+      padding: 12px;
+    }
+    .product-name {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .product-price {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .product-fav {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.9);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 2;
+      transition: transform var(--transition);
+    }
+    [data-theme="dark"] .product-fav {
+      background: rgba(0,0,0,0.6);
+    }
+    .product-fav:active { transform: scale(0.85); }
+    .product-fav.active { color: #ff3b30; }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--nav-height) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 200;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 12px;
+      transition: color var(--transition), transform var(--transition);
+      position: relative;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-item:active { transform: scale(0.9); }
+    .nav-icon { font-size: 22px; }
+    .nav-badge {
+      position: absolute;
+      top: 2px;
+      right: 8px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Pages */
+    .page {
+      display: none;
+      min-height: calc(100vh - var(--nav-height) - 80px);
+      padding-bottom: 20px;
+    }
+    .page.active { display: block; }
+
+    /* Empty states */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; }
+
+    /* Cart / Fav list */
+    .list-item {
+      display: flex;
+      gap: 12px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+      align-items: center;
+    }
+    .list-img {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .list-info { flex: 1; min-width: 0; }
+    .list-name {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-price { font-size: 15px; font-weight: 700; color: var(--accent); }
+    .list-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qty-btn:active { transform: scale(0.9); }
+    .qty-val { font-weight: 600; min-width: 20px; text-align: center; }
+
+    .cart-total {
+      position: sticky;
+      bottom: calc(var(--nav-height) + var(--safe-bottom) + 8px);
+      margin: 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cart-total-price {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .checkout-btn {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .checkout-btn:active { transform: scale(0.96); }
+
+    /* Profile */
+    .profile-header {
+      text-align: center;
+      padding: 24px 16px 16px;
+    }
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #8b6914);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      color: #0a0a0a;
+      margin: 0 auto 12px;
+      border: 3px solid var(--bg-card);
+      box-shadow: var(--shadow);
+    }
+    .profile-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .profile-level {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 16px 0;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .quest-card, .level-card, .ach-card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 0 16px 12px;
+      box-shadow: var(--shadow);
+    }
+    .quest-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .quest-reward {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .menu-list {
+      margin: 0 16px;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform var(--transition);
+    }
+    .menu-item:active { transform: scale(0.98); }
+    .menu-icon { font-size: 20px; width: 28px; text-align: center; }
+    .menu-text { flex: 1; font-size: 15px; font-weight: 500; }
+    .menu-arrow { color: var(--text-secondary); }
+
+    /* Modal / Detail */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 20px 16px calc(20px + var(--safe-bottom));
+      animation: modalUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes modalUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      margin-left: auto;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .detail-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      background: var(--border);
+    }
+    .detail-name {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .detail-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .detail-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .detail-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn-primary {
+      flex: 1;
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform var(--transition);
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-secondary {
+      width: 52px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Settings modal content */
+    .settings-group {
+      margin-bottom: 24px;
+    }
+    .settings-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+    }
+    .settings-label { font-size: 15px; }
+    .toggle {
+      width: 48px;
+      height: 28px;
+      border-radius: 14px;
+      background: var(--border);
+      position: relative;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #fff;
+      top: 2px;
+      left: 2px;
+      transition: transform var(--transition);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle.on::after { transform: translateX(20px); }
+
+    /* Flying animation element */
+    .fly-item {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      z-index: 999;
+      pointer-events: none;
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s;
+    }
+
+    /* Cart bump */
+    .nav-item.bump .nav-icon {
+      animation: cartBump 0.4s ease;
+    }
+    @keyframes cartBump {
+      0%, 100% { transform: scale(1); }
+      40% { transform: scale(1.35); }
+      70% { transform: scale(0.9); }
+    }
+
+    /* Highlight product */
+    .product-card.highlight {
+      animation: highlightPulse 1.2s ease;
+      box-shadow: 0 0 0 3px var(--accent);
+    }
+    @keyframes highlightPulse {
+      0%, 100% { box-shadow: 0 0 0 0 transparent; }
+      30% { box-shadow: 0 0 0 4px var(--accent); }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
       }
     }
-  </script>
-  <style>
-    :root { --bg: #fff; --bg2: #f5f5f5; --card: #fff; --text: #0a0a0a; --muted: #888; --border: #e8e8e8; --nav: rgba(255,255,255,0.95); }
-    .dark { --bg: #0a0a0a; --bg2: #141414; --card: #1a1a1a; --text: #f5f5f5; --muted: #999; --border: #2a2a2a; --nav: rgba(10,10,10,0.95); }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { background: var(--bg); color: var(--text); transition: background .3s, color .3s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
-    .bg-main { background: var(--bg); }
-    .bg-sec { background: var(--bg2); }
-    .bg-card { background: var(--card); }
-    .text-muted { color: var(--muted); }
-    .border-th { border-color: var(--border); }
-    .gold-grad { background: linear-gradient(135deg, #D4AF37, #F5E6A3, #B8860B); }
-    .gold-text { background: linear-gradient(135deg, #D4AF37, #F5E6A3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .btn-gold { background: linear-gradient(135deg, #D4AF37, #B8860B); color: #0a0a0a; font-weight: 600; transition: all .2s; }
-    .btn-gold:active { transform: scale(0.97); }
-    .card-h { transition: transform .25s cubic-bezier(.4,0,.2,1), box-shadow .25s; }
-    .card-h:active { transform: scale(0.98); }
-    .fade-in { animation: fadeIn .35s ease forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    /* Bottom nav safe area */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-      background: var(--nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-top: 1px solid var(--border);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* Edit profile form */
+    .form-group {
+      margin-bottom: 14px;
     }
-    .page-content { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
-    .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; padding: 8px 4px; font-size: 10px; color: var(--muted); transition: color .2s; position: relative; }
-    .nav-item.active { color: #D4AF37; }
-    .nav-item .icon { font-size: 22px; line-height: 1; }
-    .nav-badge { position: absolute; top: 2px; right: calc(50% - 18px); min-width: 16px; height: 16px; border-radius: 8px; background: #D4AF37; color: #0a0a0a; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
-    input, button { font-family: inherit; }
-    ::-webkit-scrollbar { width: 0; height: 0; }
+    .form-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <!-- SPLASH -->
+  <div id="splash">
+    <div class="splash-r">R</div>
+    <div class="splash-logo">RAVO</div>
+    <div class="splash-tagline">Покупай лучше. Живи проще.</div>
+    <div class="splash-line"></div>
+  </div>
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- APP -->
+  <div id="app">
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="header">
+        <div class="header-top">
+          <div class="logo">RAVO</div>
+          <div class="header-actions">
+            <button class="icon-btn" id="theme-toggle" title="Тема">🌙</button>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="search" placeholder="Поиск товаров..." />
+          <button class="search-clear" id="search-clear">✕</button>
+        </div>
+      </div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+      <div class="categories" id="categories"></div>
 
+      <!-- Ravo Drop -->
+      <div class="drop-card" id="drop-card">
+        <div class="drop-badge">⚡ RAVO DROP</div>
+        <div class="drop-title" id="drop-title">Товар дня</div>
+        <div class="drop-price">
+          <span id="drop-price">0 ₽</span>
+          <span class="drop-old" id="drop-old"></span>
+        </div>
+        <div class="drop-timer" id="drop-timer">Осталось: --:--:--</div>
+        <button class="drop-btn" id="drop-btn">Забрать →</button>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Каталог</div>
+        <div class="product-grid" id="product-grid"></div>
+      </div>
+    </div>
+
+    <!-- FAVORITES -->
+    <div class="page" id="page-fav">
+      <div class="header">
+        <div class="header-top">
+          <div class="logo">Избранное</div>
+        </div>
+      </div>
+      <div class="section" id="fav-list"></div>
+    </div>
+
+    <!-- CART -->
+    <div class="page" id="page-cart">
+      <div class="header">
+        <div class="header-top">
+          <div class="logo">Корзина</div>
+        </div>
+      </div>
+      <div class="section" id="cart-list"></div>
+      <div class="cart-total" id="cart-total" style="display:none;">
+        <div>
+          <div style="font-size:13px;color:var(--text-secondary)">Итого</div>
+          <div class="cart-total-price" id="cart-sum">0 ₽</div>
+        </div>
+        <button class="checkout-btn" id="checkout-btn">Оформить</button>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="profile-header">
+        <div class="avatar" id="avatar">R</div>
+        <div class="profile-name" id="profile-name">Гость</div>
+        <div class="profile-level" id="profile-level">🌱 Новичок</div>
+        <div class="stats-row">
+          <div class="stat">
+            <div class="stat-val" id="stat-bonus">0</div>
+            <div class="stat-label">Бонусы ⭐</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="stat-orders">0</div>
+            <div class="stat-label">Заказы</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="stat-fav">0</div>
+            <div class="stat-label">Избранное</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quest -->
+      <div class="quest-card">
+        <div class="quest-title">🎯 Задание дня</div>
+        <div id="quest-text">Посмотри 3 товара</div>
+        <div class="progress-bar"><div class="progress-fill" id="quest-progress" style="width:0%"></div></div>
+        <div class="quest-reward" id="quest-reward">0/3 · +50 ⭐</div>
+      </div>
+
+      <!-- Level -->
+      <div class="level-card">
+        <div class="quest-title">🏆 Уровень</div>
+        <div id="level-name">Новичок</div>
+        <div class="progress-bar"><div class="progress-fill" id="level-progress" style="width:0%"></div></div>
+        <div class="quest-reward" id="level-next">До следующего уровня: 100 ⭐</div>
+      </div>
+
+      <div class="menu-list">
+        <div class="menu-item" data-action="edit-profile">
+          <span class="menu-icon">✏️</span>
+          <span class="menu-text">Редактировать профиль</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" data-action="orders">
+          <span class="menu-icon">📦</span>
+          <span class="menu-text">Мои заказы</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" data-action="achievements">
+          <span class="menu-icon">🏅</span>
+          <span class="menu-text">Достижения</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" data-action="settings">
+          <span class="menu-icon">⚙️</span>
+          <span class="menu-text">Настройки</span>
+          <span class="menu-arrow">›</span>
+        </div>
+        <div class="menu-item" data-action="logout" style="color:var(--danger)">
+          <span class="menu-icon">🚪</span>
+          <span class="menu-text">Выйти</span>
+          <span class="menu-arrow"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-page="home">
+        <span class="nav-icon">🏠</span>
+        <span>Главная</span>
+      </button>
+      <button class="nav-item" data-page="fav">
+        <span class="nav-icon">❤️</span>
+        <span>Избранное</span>
+        <span class="nav-badge" id="fav-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" data-page="cart" id="nav-cart">
+        <span class="nav-icon">🛒</span>
+        <span>Корзина</span>
+        <span class="nav-badge" id="cart-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" data-page="profile">
+        <span class="nav-icon">👤</span>
+        <span>Профиль</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Product Detail Modal -->
+  <div class="modal-overlay" id="detail-modal">
+    <div class="modal">
+      <button class="modal-close" id="detail-close">✕</button>
+      <img class="detail-img" id="detail-img" src="" alt="" />
+      <div class="detail-name" id="detail-name"></div>
+      <div class="detail-price" id="detail-price"></div>
+      <div class="detail-desc" id="detail-desc"></div>
+      <div class="detail-actions">
+        <button class="btn-primary" id="detail-add">В корзину</button>
+        <button class="btn-secondary" id="detail-fav">❤️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+      <button class="modal-close" id="settings-close">✕</button>
+      <div class="section-title" style="margin-bottom:16px">Настройки</div>
+
+      <div class="settings-group">
+        <div class="settings-title">Внешний вид</div>
+        <div class="settings-item">
+          <span class="settings-label">🌙 Тёмная тема</span>
+          <div class="toggle" id="toggle-dark"></div>
+        </div>
+        <div class="settings-item">
+          <span class="settings-label">✨ Анимации</span>
+          <div class="toggle on" id="toggle-anim"></div>
+        </div>
+        <div class="settings-item">
+          <span class="settings-label">📱 Компактный каталог</span>
+          <div class="toggle" id="toggle-compact"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-title">Уведомления</div>
+        <div class="settings-item">
+          <span class="settings-label">🔔 Уведомления</span>
+          <div class="toggle on" id="toggle-notif"></div>
+        </div>
+        <div class="settings-item">
+          <span class="settings-label">📳 Тактильные эффекты</span>
+          <div class="toggle on" id="toggle-haptic"></div>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="width:100%;margin-top:8px;background:var(--danger);color:#fff" id="reset-settings">
+        Сбросить настройки
+      </button>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <button class="modal-close" id="edit-close">✕</button>
+      <div class="section-title" style="margin-bottom:16px">Редактировать профиль</div>
+      <div class="form-group">
+        <label class="form-label">Имя</label>
+        <input class="form-input" id="edit-name" type="text" placeholder="Ваше имя" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Телефон</label>
+        <input class="form-input" id="edit-phone" type="tel" placeholder="+7 ..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="edit-email" type="email" placeholder="email@example.com" />
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" id="save-profile">Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Achievements Modal -->
+  <div class="modal-overlay" id="ach-modal">
+    <div class="modal">
+      <button class="modal-close" id="ach-close">✕</button>
+      <div class="section-title" style="margin-bottom:16px">🏅 Достижения</div>
+      <div id="ach-list"></div>
+    </div>
+  </div>
+
+  <script>
+    // ==================== DATA ====================
     const PRODUCTS = [
-      { id:1, name:'Смартфон Ravo Pro Max 256GB', price:89990, oldPrice:99990, image:'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop', rating:4.9, reviews:1247, category:'Электроника', brand:'Ravo', badge:'Хит' },
-      { id:2, name:'Беспроводные наушники Ravo Air', price:12990, oldPrice:15990, image:'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop', rating:4.8, reviews:892, category:'Электроника', brand:'Ravo', badge:'-19%' },
-      { id:3, name:'Умные часы Ravo Watch S', price:24990, image:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop', rating:4.7, reviews:543, category:'Электроника', brand:'Ravo' },
-      { id:4, name:'Кроссовки Urban Gold Edition', price:8990, oldPrice:11990, image:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop', rating:4.6, reviews:2103, category:'Обувь', brand:'Urban', badge:'Новинка' },
-      { id:5, name:'Куртка премиум чёрная с золотом', price:15990, image:'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop', rating:4.9, reviews:421, category:'Одежда', brand:'Ravo Style' },
-      { id:6, name:'Рюкзак кожаный Gold Line', price:7490, oldPrice:9990, image:'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop', rating:4.5, reviews:678, category:'Аксессуары', brand:'Gold Line' },
-      { id:7, name:'Парфюм Ravo Noir 100ml', price:5990, image:'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=400&fit=crop', rating:4.8, reviews:1120, category:'Красота', brand:'Ravo', badge:'Хит' },
-      { id:8, name:'Наушники накладные Ravo Studio', price:18990, oldPrice:22990, image:'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400&h=400&fit=crop', rating:4.7, reviews:334, category:'Электроника', brand:'Ravo' },
-      { id:9, name:'Платье вечернее золотое', price:12990, image:'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop', rating:4.9, reviews:289, category:'Одежда', brand:'Ravo Style', badge:'Эксклюзив' },
-      { id:10, name:'Колонка портативная Ravo Boom', price:4990, oldPrice:6990, image:'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop', rating:4.6, reviews:1567, category:'Электроника', brand:'Ravo' },
-      { id:11, name:'Солнцезащитные очки Gold Frame', price:3990, image:'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&h=400&fit=crop', rating:4.4, reviews:812, category:'Аксессуары', brand:'Gold Frame' },
-      { id:12, name:'Чехол для iPhone Premium Gold', price:2490, oldPrice:3490, image:'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&h=400&fit=crop', rating:4.5, reviews:2341, category:'Аксессуары', brand:'Ravo', badge:'-29%' },
+      { id: 1, name: "Беспроводные наушники Pro", price: 4990, old: 6990, cat: "Электроника", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop", desc: "Премиум-звук, активное шумоподавление, 30 часов работы." },
+      { id: 2, name: "Умные часы Series X", price: 12990, old: 15990, cat: "Электроника", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop", desc: "AMOLED-экран, пульсометр, GPS, водозащита 5 ATM." },
+      { id: 3, name: "Рюкзак Urban Classic", price: 3490, old: null, cat: "Аксессуары", img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop", desc: "Водоотталкивающая ткань, отделение для ноутбука 15\"." },
+      { id: 4, name: "Кроссовки RunMax", price: 7990, old: 9990, cat: "Одежда", img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop", desc: "Лёгкие беговые кроссовки с амортизацией." },
+      { id: 5, name: "Кофемашина MiniBar", price: 18990, old: 22990, cat: "Дом", img: "https://images.unsplash.com/photo-1517668808823-f4cd0f0f5f0f?w=400&h=400&fit=crop", desc: "Капсульная система, 19 бар, подогрев чашек." },
+      { id: 6, name: "Портативная колонка Boom", price: 2990, old: 3990, cat: "Электроника", img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop", desc: "360° звук, IPX7, 20 часов автономности." },
+      { id: 7, name: "Футболка Oversize", price: 1490, old: null, cat: "Одежда", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop", desc: "100% хлопок, свободный крой, унисекс." },
+      { id: 8, name: "Лампа Ambient LED", price: 2490, old: 3290, cat: "Дом", img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&h=400&fit=crop", desc: "RGB, управление со смартфона, 16 млн цветов." },
+      { id: 9, name: "Кошелёк Leather", price: 1990, old: null, cat: "Аксессуары", img: "https://images.unsplash.com/photo-1627123424574-724758594f93?w=400&h=400&fit=crop", desc: "Натуральная кожа, RFID-защита." },
+      { id: 10, name: "Геймпад Wireless", price: 4490, old: 5490, cat: "Электроника", img: "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400&h=400&fit=crop", desc: "Для PC/PS/Xbox, вибрация, 20 часов работы." },
+      { id: 11, name: "Термокружка Steel", price: 1290, old: null, cat: "Дом", img: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop", desc: "Держит тепло 12 часов, 500 мл." },
+      { id: 12, name: "Худи Premium", price: 3990, old: 4990, cat: "Одежда", img: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop", desc: "Плотная ткань, капюшон, карман-кенгуру." },
+      { id: 13, name: "Пауэрбанк 20000", price: 2790, old: 3490, cat: "Электроника", img: "https://images.unsplash.com/photo-1609091839311-b54892fea0d4?w=400&h=400&fit=crop", desc: "Быстрая зарядка 22.5W, два USB + Type-C." },
+      { id: 14, name: "Солнцезащитные очки", price: 3490, old: null, cat: "Аксессуары", img: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop", desc: "UV400, поляризация, лёгкая оправа." },
+      { id: 15, name: "Коврик для йоги", price: 1890, old: 2490, cat: "Спорт", img: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=400&h=400&fit=crop", desc: "Нескользящий, 6 мм, с чехлом." },
+      { id: 16, name: "Кепка Classic", price: 990, old: null, cat: "Аксессуары", img: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop", desc: "Регулируемый размер, вышивка." },
+      { id: 17, name: "Увлажнитель воздуха", price: 4590, old: 5990, cat: "Дом", img: "https://images.unsplash.com/photo-1585771724680-efb9049b2d0d?w=400&h=400&fit=crop", desc: "Ультразвуковой, 3 л, ароматерапия." },
+      { id: 18, name: "Спортивные шорты", price: 1790, old: null, cat: "Одежда", img: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&h=400&fit=crop", desc: "Дышащая ткань, карманы на молнии." },
+      { id: 19, name: "Клавиатура Механическая", price: 6990, old: 8990, cat: "Электроника", img: "https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=400&h=400&fit=crop", desc: "RGB, hot-swap, беспроводная." },
+      { id: 20, name: "Массажный ролик", price: 1490, old: null, cat: "Спорт", img: "https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=400&h=400&fit=crop", desc: "EVA-пена, для восстановления мышц." },
     ];
 
-    const CATS = [
-      { id:'all', name:'Все', icon:'✨' },
-      { id:'Электроника', name:'Электроника', icon:'📱' },
-      { id:'Одежда', name:'Одежда', icon:'👕' },
-      { id:'Обувь', name:'Обувь', icon:'👟' },
-      { id:'Аксессуары', name:'Аксессуары', icon:'👜' },
-      { id:'Красота', name:'Красота', icon:'💄' },
+    const CATEGORIES = ["Все", "Электроника", "Одежда", "Аксессуары", "Дом", "Спорт"];
+    const LEVELS = [
+      { name: "Новичок", min: 0, icon: "🌱" },
+      { name: "Покупатель", min: 100, icon: "🛒" },
+      { name: "Insider", min: 300, icon: "⭐" },
+      { name: "Legend", min: 700, icon: "👑" },
+    ];
+    const ACHIEVEMENTS = [
+      { id: "first_view", title: "Любопытный", desc: "Посмотреть первый товар", icon: "👀" },
+      { id: "first_fav", title: "Сердцеедка", desc: "Добавить в избранное", icon: "❤️" },
+      { id: "first_cart", title: "Шопоголик", desc: "Положить в корзину", icon: "🛒" },
+      { id: "quest_done", title: "Исполнитель", desc: "Выполнить задание дня", icon: "🎯" },
+      { id: "level_up", title: "Растущий", desc: "Повысить уровень", icon: "📈" },
+      { id: "dark_mode", title: "Ночной", desc: "Включить тёмную тему", icon: "🌙" },
     ];
 
-    function useLocal(key, init) {
-      const [v, setV] = useState(() => {
-        try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : init; } catch { return init; }
-      });
-      useEffect(() => { localStorage.setItem(key, JSON.stringify(v)); }, [key, v]);
-      return [v, setV];
+    // ==================== STATE ====================
+    const state = {
+      cart: {},
+      fav: new Set(),
+      viewed: new Set(),
+      bonus: 0,
+      orders: 0,
+      profile: { name: "Гость", phone: "", email: "", avatar: "R" },
+      settings: { dark: false, anim: true, compact: false, notif: true, haptic: true },
+      quest: { target: 3, current: 0, done: false, reward: 50 },
+      achievements: new Set(),
+      dropId: null,
+      currentCat: "Все",
+      search: "",
+    };
+
+    // ==================== STORAGE ====================
+    function save() {
+      localStorage.setItem("ravo_v4", JSON.stringify({
+        cart: state.cart,
+        fav: [...state.fav],
+        viewed: [...state.viewed],
+        bonus: state.bonus,
+        orders: state.orders,
+        profile: state.profile,
+        settings: state.settings,
+        quest: state.quest,
+        achievements: [...state.achievements],
+      }));
+    }
+    function load() {
+      try {
+        const raw = localStorage.getItem("ravo_v4");
+        if (!raw) return;
+        const d = JSON.parse(raw);
+        state.cart = d.cart || {};
+        state.fav = new Set(d.fav || []);
+        state.viewed = new Set(d.viewed || []);
+        state.bonus = d.bonus || 0;
+        state.orders = d.orders || 0;
+        state.profile = d.profile || state.profile;
+        state.settings = { ...state.settings, ...(d.settings || {}) };
+        state.quest = d.quest || state.quest;
+        state.achievements = new Set(d.achievements || []);
+      } catch (e) {}
     }
 
-    // ===== BOTTOM NAV =====
-    function BottomNav({ page, setPage, cartCount, favCount }) {
-      const items = [
-        { id: 'home', label: 'Главная', icon: '🏠' },
-        { id: 'catalog', label: 'Каталог', icon: '▦' },
-        { id: 'cart', label: 'Корзина', icon: '🛒', badge: cartCount },
-        { id: 'favorites', label: 'Избранное', icon: '♡', badge: favCount },
-        { id: 'profile', label: 'Профиль', icon: '👤' },
-      ];
-      return (
-        <nav className="bottom-nav">
-          <div className="flex items-stretch max-w-lg mx-auto">
-            {items.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setPage(item.id)}
-                className={`nav-item ${page === item.id || (page === 'product' && item.id === 'home') ? 'active' : ''}`}
-              >
-                <span className="icon">{item.icon}</span>
-                <span>{item.label}</span>
-                {item.badge > 0 && <span className="nav-badge">{item.badge > 99 ? '99+' : item.badge}</span>}
-              </button>
-            ))}
-          </div>
-        </nav>
-      );
+    // ==================== HELPERS ====================
+    function $(sel) { return document.querySelector(sel); }
+    function $$(sel) { return document.querySelectorAll(sel); }
+    function formatPrice(n) { return n.toLocaleString("ru-RU") + " ₽"; }
+    function haptic() {
+      if (!state.settings.haptic) return;
+      if (navigator.vibrate) navigator.vibrate(10);
     }
-
-    // ===== TOP HEADER (search only) =====
-    function TopBar({ query, setQuery, theme, toggleTheme, showBack, onBack, title }) {
-      if (showBack) {
-        return (
-          <div className="sticky top-0 z-50 flex items-center gap-3 px-3 py-3 border-b border-th" style={{background: 'var(--nav)', backdropFilter: 'blur(20px)'}}>
-            <button onClick={onBack} className="p-2 -ml-1 text-lg">←</button>
-            <h1 className="font-bold text-base flex-1 truncate">{title}</h1>
-            <button onClick={toggleTheme} className="p-2 text-lg">{theme === 'dark' ? '☀️' : '🌙'}</button>
-          </div>
-        );
+    function getLevel() {
+      let lvl = LEVELS[0];
+      for (const l of LEVELS) {
+        if (state.bonus >= l.min) lvl = l;
       }
-      return (
-        <div className="sticky top-0 z-50 px-3 py-2.5 border-b border-th" style={{background: 'var(--nav)', backdropFilter: 'blur(20px)'}}>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gold-grad flex items-center justify-center shrink-0">
-              <span className="text-black font-black text-sm">R</span>
-            </div>
-            <div className="flex-1 relative">
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Найти на Ravo"
-                className="w-full pl-3 pr-9 py-2 rounded-xl text-sm border border-th outline-none focus:border-gold"
-                style={{background: 'var(--bg2)', color: 'var(--text)'}}
-              />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm opacity-50">🔍</span>
-            </div>
-            <button onClick={toggleTheme} className="p-2 text-lg shrink-0">{theme === 'dark' ? '☀️' : '🌙'}</button>
-          </div>
-        </div>
-      );
+      return lvl;
+    }
+    function nextLevel() {
+      const cur = getLevel();
+      const idx = LEVELS.indexOf(cur);
+      return LEVELS[idx + 1] || null;
+    }
+    function unlockAch(id) {
+      if (state.achievements.has(id)) return;
+      state.achievements.add(id);
+      save();
     }
 
-    function ProductCard({ p, index, onAdd, onFav, isFav, onOpen }) {
-      return (
-        <div className="group relative bg-card rounded-2xl border border-th overflow-hidden card-h fade-in" style={{animationDelay: `${Math.min(index, 8)*0.04}s`}}>
-          <div className="relative aspect-square overflow-hidden bg-sec" onClick={() => onOpen(p)}>
-            <img src={p.image} alt={p.name} className="w-full h-full object-cover" loading="lazy" />
-            {p.badge && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-gold text-black">{p.badge}</span>}
-            <button onClick={e => { e.stopPropagation(); onFav(p.id); }} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-sm">
-              {isFav ? '❤️' : '🤍'}
-            </button>
-          </div>
-          <div className="p-2.5" onClick={() => onOpen(p)}>
-            <div className="flex items-center gap-1 mb-1 text-[11px]">
-              <span className="text-gold">★</span>
-              <span className="font-semibold">{p.rating}</span>
-              <span className="text-muted">({p.reviews})</span>
-            </div>
-            <h3 className="text-[13px] font-medium leading-snug line-clamp-2 mb-1">{p.name}</h3>
-            <div className="flex items-end justify-between gap-1 mt-1.5">
-              <div>
-                <div className="text-[15px] font-bold leading-none">{p.price.toLocaleString('ru-RU')} ₽</div>
-                {p.oldPrice && <div className="text-[10px] text-muted line-through mt-0.5">{p.oldPrice.toLocaleString('ru-RU')} ₽</div>}
-              </div>
-              <button onClick={e => { e.stopPropagation(); onAdd(p); }} className="w-8 h-8 rounded-lg btn-gold flex items-center justify-center text-sm shrink-0">+</button>
-            </div>
-          </div>
-        </div>
-      );
+    // ==================== RENDER ====================
+    function renderCategories() {
+      const el = $("#categories");
+      el.innerHTML = CATEGORIES.map(c =>
+        `<button class="cat-btn ${state.currentCat === c ? "active" : ""}" data-cat="${c}">${c}</button>`
+      ).join("");
+      el.querySelectorAll(".cat-btn").forEach(btn => {
+        btn.onclick = () => {
+          state.currentCat = btn.dataset.cat;
+          haptic();
+          renderCategories();
+          renderProducts();
+        };
+      });
     }
 
-    function Home({ products, onAdd, onFav, favs, onOpen, cat, setCat, query }) {
-      const filtered = useMemo(() => {
-        let list = products;
-        if (query) {
-          const q = query.toLowerCase();
-          list = list.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+    function getFiltered() {
+      let list = PRODUCTS;
+      if (state.currentCat !== "Все") list = list.filter(p => p.cat === state.currentCat);
+      if (state.search) {
+        const q = state.search.toLowerCase();
+        list = list.filter(p => p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+      }
+      return list;
+    }
+
+    function renderProducts() {
+      const grid = $("#product-grid");
+      const list = getFiltered();
+      grid.innerHTML = list.map((p, i) => `
+        <div class="product-card" data-id="${p.id}" style="transition-delay:${state.settings.anim ? i * 40 : 0}ms">
+          <button class="product-fav ${state.fav.has(p.id) ? "active" : ""}" data-fav="${p.id}">${state.fav.has(p.id) ? "❤️" : "🤍"}</button>
+          <img class="product-img" src="${p.img}" alt="${p.name}" loading="lazy" />
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            <div class="product-price">${formatPrice(p.price)}</div>
+          </div>
+        </div>
+      `).join("");
+
+      // Motion Engine
+      if (state.settings.anim) {
+        const cards = grid.querySelectorAll(".product-card");
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              e.target.classList.add("visible");
+              io.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.1 });
+        cards.forEach(c => io.observe(c));
+      } else {
+        grid.querySelectorAll(".product-card").forEach(c => c.classList.add("visible"));
+      }
+
+      // Events
+      grid.querySelectorAll(".product-card").forEach(card => {
+        card.onclick = (e) => {
+          if (e.target.closest(".product-fav")) return;
+          openDetail(+card.dataset.id);
+        };
+      });
+      grid.querySelectorAll(".product-fav").forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          toggleFav(+btn.dataset.fav);
+          haptic();
+        };
+      });
+    }
+
+    function renderDrop() {
+      if (!state.dropId) {
+        state.dropId = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)].id;
+      }
+      const p = PRODUCTS.find(x => x.id === state.dropId);
+      if (!p) return;
+      $("#drop-title").textContent = p.name;
+      $("#drop-price").textContent = formatPrice(Math.round(p.price * 0.7));
+      $("#drop-old").textContent = formatPrice(p.price);
+      $("#drop-btn").onclick = () => {
+        haptic();
+        const card = document.querySelector(`.product-card[data-id="${p.id}"]`);
+        if (card) {
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          card.classList.add("highlight");
+          setTimeout(() => card.classList.remove("highlight"), 1500);
+        } else {
+          openDetail(p.id);
         }
-        if (cat !== 'all') list = list.filter(p => p.category === cat);
-        return list;
-      }, [products, query, cat]);
+      };
+      updateDropTimer();
+    }
 
-      return (
-        <div className="px-3 pt-3">
-          <div className="rounded-2xl overflow-hidden mb-4 gold-grad p-5 fade-in">
-            <h1 className="text-xl font-black text-black mb-1 tracking-tight">Ravo</h1>
-            <p className="text-black/75 text-xs mb-3">Золотой стандарт доставки</p>
-            <button className="px-4 py-2 rounded-xl bg-black text-gold font-semibold text-xs">Смотреть всё</button>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-3 mb-3 -mx-1 px-1" style={{scrollbarWidth:'none'}}>
-            {CATS.map(c => (
-              <button key={c.id} onClick={() => setCat(c.id)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${cat===c.id ? 'bg-gold text-black' : 'bg-card border border-th'}`}>
-                <span>{c.icon}</span>{c.name}
-              </button>
-            ))}
-          </div>
-          {query && <p className="text-xs text-muted mb-3">Найдено: {filtered.length}</p>}
-          {filtered.length === 0 ? (
-            <div className="text-center py-16"><p className="font-medium mb-1">Ничего не найдено</p><p className="text-muted text-sm">Попробуйте другой запрос</p></div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5">
-              {filtered.map((p,i) => (
-                <ProductCard key={p.id} p={p} index={i} onAdd={onAdd} onFav={onFav} isFav={favs.includes(p.id)} onOpen={onOpen} />
-              ))}
+    function updateDropTimer() {
+      const now = new Date();
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      const diff = end - now;
+      if (diff <= 0) {
+        $("#drop-timer").textContent = "Закончился";
+        return;
+      }
+      const h = String(Math.floor(diff / 3600000)).padStart(2, "0");
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
+      $("#drop-timer").textContent = `Осталось: ${h}:${m}:${s}`;
+    }
+
+    function renderFav() {
+      const el = $("#fav-list");
+      const ids = [...state.fav];
+      if (!ids.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">❤️</div><div class="empty-text">Пока пусто. Добавляй товары в избранное!</div></div>`;
+        return;
+      }
+      el.innerHTML = ids.map(id => {
+        const p = PRODUCTS.find(x => x.id === id);
+        if (!p) return "";
+        return `
+          <div class="list-item">
+            <img class="list-img" src="${p.img}" alt="" />
+            <div class="list-info">
+              <div class="list-name">${p.name}</div>
+              <div class="list-price">${formatPrice(p.price)}</div>
             </div>
-          )}
-        </div>
-      );
+            <div class="list-actions">
+              <button class="qty-btn" data-remove-fav="${id}">✕</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+      el.querySelectorAll("[data-remove-fav]").forEach(btn => {
+        btn.onclick = () => { toggleFav(+btn.dataset.removeFav); haptic(); };
+      });
     }
 
-    function Catalog({ products, onAdd, onFav, favs, onOpen, cat, setCat }) {
-      const filtered = cat === 'all' ? products : products.filter(p => p.category === cat);
-      return (
-        <div className="px-3 pt-3">
-          <h1 className="text-lg font-bold mb-3">Каталог</h1>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {CATS.filter(c => c.id !== 'all').map(c => (
-              <button key={c.id} onClick={() => setCat(c.id)}
-                className={`flex flex-col items-center gap-1 p-3 rounded-2xl border transition-all ${cat===c.id ? 'border-gold bg-gold/10' : 'border-th bg-card'}`}>
-                <span className="text-2xl">{c.icon}</span>
-                <span className="text-[11px] font-medium">{c.name}</span>
-              </button>
-            ))}
+    function renderCart() {
+      const el = $("#cart-list");
+      const ids = Object.keys(state.cart).map(Number);
+      if (!ids.length) {
+        el.innerHTML = `<div class="empty"><div class="empty-icon">🛒</div><div class="empty-text">Корзина пуста</div></div>`;
+        $("#cart-total").style.display = "none";
+        return;
+      }
+      let sum = 0;
+      el.innerHTML = ids.map(id => {
+        const p = PRODUCTS.find(x => x.id === id);
+        if (!p) return "";
+        const qty = state.cart[id];
+        sum += p.price * qty;
+        return `
+          <div class="list-item">
+            <img class="list-img" src="${p.img}" alt="" />
+            <div class="list-info">
+              <div class="list-name">${p.name}</div>
+              <div class="list-price">${formatPrice(p.price)}</div>
+            </div>
+            <div class="list-actions">
+              <button class="qty-btn" data-dec="${id}">−</button>
+              <span class="qty-val">${qty}</span>
+              <button class="qty-btn" data-inc="${id}">+</button>
+            </div>
           </div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted">{filtered.length} товаров</span>
-            {cat !== 'all' && <button onClick={() => setCat('all')} className="text-xs text-gold font-medium">Сбросить</button>}
-          </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {filtered.map((p,i) => (
-              <ProductCard key={p.id} p={p} index={i} onAdd={onAdd} onFav={onFav} isFav={favs.includes(p.id)} onOpen={onOpen} />
-            ))}
-          </div>
-        </div>
-      );
+        `;
+      }).join("");
+      $("#cart-total").style.display = "flex";
+      $("#cart-sum").textContent = formatPrice(sum);
+
+      el.querySelectorAll("[data-inc]").forEach(btn => {
+        btn.onclick = () => { changeQty(+btn.dataset.inc, 1); haptic(); };
+      });
+      el.querySelectorAll("[data-dec]").forEach(btn => {
+        btn.onclick = () => { changeQty(+btn.dataset.dec, -1); haptic(); };
+      });
     }
 
-    function Cart({ cart, updateQty, remove, total, clear, setPage }) {
-      if (!cart.length) return (
-        <div className="px-4 py-20 text-center fade-in">
-          <div className="text-5xl mb-3">🛒</div>
-          <h2 className="text-lg font-bold mb-1">Корзина пуста</h2>
-          <p className="text-muted text-sm mb-5">Добавьте товары из каталога</p>
-          <button onClick={() => setPage('home')} className="px-6 py-2.5 rounded-xl btn-gold text-sm">На главную</button>
-        </div>
-      );
-      return (
-        <div className="px-3 pt-3 fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-lg font-bold">Корзина · {cart.length}</h1>
-            <button onClick={clear} className="text-xs text-muted">Очистить</button>
-          </div>
-          <div className="space-y-2.5 mb-4">
-            {cart.map(({product:p, qty}) => (
-              <div key={p.id} className="flex gap-3 p-3 rounded-2xl bg-card border border-th">
-                <img src={p.image} className="w-20 h-20 rounded-xl object-cover bg-sec shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium line-clamp-2 leading-snug">{p.name}</p>
-                  <p className="text-[11px] text-muted mt-0.5">{p.brand}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-0.5 bg-sec rounded-lg">
-                      <button onClick={() => updateQty(p.id, qty-1)} className="w-7 h-7 flex items-center justify-center text-sm">−</button>
-                      <span className="w-6 text-center text-sm font-semibold">{qty}</span>
-                      <button onClick={() => updateQty(p.id, qty+1)} className="w-7 h-7 flex items-center justify-center text-sm">+</button>
+    function renderProfile() {
+      const lvl = getLevel();
+      const next = nextLevel();
+      $("#avatar").textContent = state.profile.avatar || state.profile.name[0]?.toUpperCase() || "R";
+      $("#profile-name").textContent = state.profile.name || "Гость";
+      $("#profile-level").textContent = `${lvl.icon} ${lvl.name}`;
+      $("#stat-bonus").textContent = state.bonus;
+      $("#stat-orders").textContent = state.orders;
+      $("#stat-fav").textContent = state.fav.size;
+
+      const q = state.quest;
+      $("#quest-text").textContent = "Посмотри 3 товара";
+      $("#quest-progress").style.width = `${Math.min(100, (q.current / q.target) * 100)}%`;
+      $("#quest-reward").textContent = q.done
+        ? "Выполнено! ✓"
+        : `${q.current}/${q.target} · +${q.reward} ⭐`;
+
+      $("#level-name").textContent = `${lvl.icon} ${lvl.name}`;
+      if (next) {
+        const progress = ((state.bonus - lvl.min) / (next.min - lvl.min)) * 100;
+        $("#level-progress").style.width = `${Math.min(100, progress)}%`;
+        $("#level-next").textContent = `До «${next.name}»: ${next.min - state.bonus} ⭐`;
+      } else {
+        $("#level-progress").style.width = "100%";
+        $("#level-next").textContent = "Максимальный уровень!";
+      }
+    }
+
+    function renderBadges() {
+      const cartCount = Object.values(state.cart).reduce((a, b) => a + b, 0);
+      const favCount = state.fav.size;
+      const cartBadge = $("#cart-badge");
+      const favBadge = $("#fav-badge");
+      if (cartCount > 0) {
+        cartBadge.style.display = "flex";
+        cartBadge.textContent = cartCount;
+      } else cartBadge.style.display = "none";
+      if (favCount > 0) {
+        favBadge.style.display = "flex";
+        favBadge.textContent = favCount;
+      } else favBadge.style.display = "none";
+    }
+
+    function applyTheme() {
+      document.documentElement.setAttribute("data-theme", state.settings.dark ? "dark" : "light");
+      $("#theme-toggle").textContent = state.settings.dark ? "☀️" : "🌙";
+      $("#toggle-dark").classList.toggle("on", state.settings.dark);
+    }
+
+    // ==================== ACTIONS ====================
+    function toggleFav(id) {
+      if (state.fav.has(id)) state.fav.delete(id);
+      else {
+        state.fav.add(id);
+        unlockAch("first_fav");
+      }
+      save();
+      renderProducts();
+      renderFav();
+      renderBadges();
+      renderProfile();
+    }
+
+    function changeQty(id, delta) {
+      const cur = state.cart[id] || 0;
+      const next = cur + delta;
+      if (next <= 0) delete state.cart[id];
+      else state.cart[id] = next;
+      save();
+      renderCart();
+      renderBadges();
+    }
+
+    function addToCart(id, fromEl) {
+      state.cart[id] = (state.cart[id] || 0) + 1;
+      unlockAch("first_cart");
+      save();
+      renderBadges();
+
+      if (state.settings.anim && fromEl) {
+        const img = fromEl.querySelector("img") || fromEl;
+        const rect = img.getBoundingClientRect();
+        const cartBtn = $("#nav-cart");
+        const cartRect = cartBtn.getBoundingClientRect();
+        const fly = document.createElement("img");
+        fly.src = img.src || PRODUCTS.find(p => p.id === id)?.img;
+        fly.className = "fly-item";
+        fly.style.left = rect.left + "px";
+        fly.style.top = rect.top + "px";
+        fly.style.width = rect.width + "px";
+        fly.style.height = rect.height + "px";
+        document.body.appendChild(fly);
+        requestAnimationFrame(() => {
+          fly.style.transform = `translate(${cartRect.left - rect.left + 10}px, ${cartRect.top - rect.top + 10}px) scale(0.2)`;
+          fly.style.opacity = "0.4";
+        });
+        setTimeout(() => {
+          fly.remove();
+          cartBtn.classList.add("bump");
+          setTimeout(() => cartBtn.classList.remove("bump"), 400);
+        }, 600);
+      } else {
+        $("#nav-cart").classList.add("bump");
+        setTimeout(() => $("#nav-cart").classList.remove("bump"), 400);
+      }
+      haptic();
+    }
+
+    function openDetail(id) {
+      const p = PRODUCTS.find(x => x.id === id);
+      if (!p) return;
+      state.viewed.add(id);
+      unlockAch("first_view");
+
+      if (!state.quest.done) {
+        state.quest.current = Math.min(state.quest.target, state.viewed.size);
+        if (state.quest.current >= state.quest.target) {
+          state.quest.done = true;
+          state.bonus += state.quest.reward;
+          unlockAch("quest_done");
+          const before = getLevel();
+          if (getLevel() !== before) unlockAch("level_up");
+        }
+        save();
+        renderProfile();
+      }
+
+      $("#detail-img").src = p.img;
+      $("#detail-name").textContent = p.name;
+      $("#detail-price").textContent = formatPrice(p.price);
+      $("#detail-desc").textContent = p.desc;
+      $("#detail-fav").textContent = state.fav.has(id) ? "❤️" : "🤍";
+      $("#detail-fav").onclick = () => {
+        toggleFav(id);
+        $("#detail-fav").textContent = state.fav.has(id) ? "❤️" : "🤍";
+        haptic();
+      };
+      $("#detail-add").onclick = () => {
+        addToCart(id, $("#detail-img"));
+        closeModal("detail-modal");
+      };
+      openModal("detail-modal");
+      haptic();
+    }
+
+    function openModal(id) {
+      $(`#${id}`).classList.add("open");
+    }
+    function closeModal(id) {
+      $(`#${id}`).classList.remove("open");
+    }
+
+    function switchPage(page) {
+      $$(".page").forEach(p => p.classList.remove("active"));
+      $(`#page-${page}`).classList.add("active");
+      $$(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.page === page));
+      if (page === "fav") renderFav();
+      if (page === "cart") renderCart();
+      if (page === "profile") renderProfile();
+      haptic();
+    }
+
+    // ==================== INIT ====================
+    function init() {
+      load();
+      applyTheme();
+      renderCategories();
+      renderProducts();
+      renderDrop();
+      renderBadges();
+      renderProfile();
+
+      const search = $("#search");
+      const clearBtn = $("#search-clear");
+      search.oninput = () => {
+        state.search = search.value.trim();
+        clearBtn.classList.toggle("visible", !!state.search);
+        renderProducts();
+      };
+      clearBtn.onclick = () => {
+        search.value = "";
+        state.search = "";
+        clearBtn.classList.remove("visible");
+        renderProducts();
+        haptic();
+      };
+
+      $$(".nav-item").forEach(btn => {
+        btn.onclick = () => switchPage(btn.dataset.page);
+      });
+
+      $("#theme-toggle").onclick = () => {
+        state.settings.dark = !state.settings.dark;
+        if (state.settings.dark) unlockAch("dark_mode");
+        applyTheme();
+        save();
+        haptic();
+      };
+
+      $$(".menu-item").forEach(item => {
+        item.onclick = () => {
+          const action = item.dataset.action;
+          if (action === "settings") {
+            $("#toggle-dark").classList.toggle("on", state.settings.dark);
+            $("#toggle-anim").classList.toggle("on", state.settings.anim);
+            $("#toggle-compact").classList.toggle("on", state.settings.compact);
+            $("#toggle-notif").classList.toggle("on", state.settings.notif);
+            $("#toggle-haptic").classList.toggle("on", state.settings.haptic);
+            openModal("settings-modal");
+          } else if (action === "edit-profile") {
+            $("#edit-name").value = state.profile.name || "";
+            $("#edit-phone").value = state.profile.phone || "";
+            $("#edit-email").value = state.profile.email || "";
+            openModal("edit-modal");
+          } else if (action === "achievements") {
+            const list = $("#ach-list");
+            list.innerHTML = ACHIEVEMENTS.map(a => {
+              const unlocked = state.achievements.has(a.id);
+              return `
+                <div class="ach-card" style="opacity:${unlocked ? 1 : 0.45}">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="font-size:28px">${a.icon}</span>
+                    <div>
+                      <div style="font-weight:700">${a.title}</div>
+                      <div style="font-size:13px;color:var(--text-secondary)">${a.desc}</div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">{(p.price*qty).toLocaleString('ru-RU')} ₽</span>
-                      <button onClick={() => remove(p.id)} className="text-muted text-sm">✕</button>
-                    </div>
+                    <span style="margin-left:auto">${unlocked ? "✅" : "🔒"}</span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="p-4 rounded-2xl bg-card border border-th space-y-3">
-            <div className="flex justify-between text-sm"><span className="text-muted">Товары</span><span>{total.toLocaleString('ru-RU')} ₽</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted">Доставка</span><span className="text-green-500">Бесплатно</span></div>
-            <div className="border-t border-th pt-3 flex justify-between items-baseline">
-              <span className="font-bold">Итого</span>
-              <span className="text-xl font-black gold-text">{total.toLocaleString('ru-RU')} ₽</span>
-            </div>
-            <button className="w-full py-3 rounded-xl btn-gold text-sm font-semibold">Оформить заказ</button>
-          </div>
-        </div>
-      );
-    }
+              `;
+            }).join("");
+            openModal("ach-modal");
+          } else if (action === "orders") {
+            alert(state.orders ? `У вас ${state.orders} заказ(ов)` : "Пока нет заказов");
+          } else if (action === "logout") {
+            if (confirm("Сбросить все данные Ravo?")) {
+              localStorage.removeItem("ravo_v4");
+              location.reload();
+            }
+          }
+          haptic();
+        };
+      });
 
-    function Favorites({ favs, products, onAdd, onFav, onOpen, setPage }) {
-      const list = products.filter(p => favs.includes(p.id));
-      if (!list.length) return (
-        <div className="px-4 py-20 text-center fade-in">
-          <div className="text-5xl mb-3">♡</div>
-          <h2 className="text-lg font-bold mb-1">В избранном пусто</h2>
-          <p className="text-muted text-sm mb-5">Нажимайте сердечко на товарах</p>
-          <button onClick={() => setPage('home')} className="px-6 py-2.5 rounded-xl btn-gold text-sm">На главную</button>
-        </div>
-      );
-      return (
-        <div className="px-3 pt-3 fade-in">
-          <h1 className="text-lg font-bold mb-4">Избранное · {list.length}</h1>
-          <div className="grid grid-cols-2 gap-2.5">
-            {list.map((p,i) => <ProductCard key={p.id} p={p} index={i} onAdd={onAdd} onFav={onFav} isFav={true} onOpen={onOpen} />)}
-          </div>
-        </div>
-      );
-    }
-
-    function Profile({ theme, toggleTheme, loggedIn, setLoggedIn }) {
-      const [phone, setPhone] = useState('');
-      if (!loggedIn) return (
-        <div className="px-4 py-12 fade-in">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl gold-grad mx-auto flex items-center justify-center mb-4 shadow-lg">
-              <span className="text-black font-black text-2xl">R</span>
-            </div>
-            <h1 className="text-xl font-bold mb-1">Вход в Ravo</h1>
-            <p className="text-muted text-sm">Войдите, чтобы видеть заказы</p>
-          </div>
-          <div className="space-y-3 max-w-sm mx-auto">
-            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+7 (999) 000-00-00"
-              className="w-full px-4 py-3 rounded-xl border border-th text-sm outline-none focus:border-gold"
-              style={{background:'var(--bg2)', color:'var(--text)'}} />
-            <button onClick={() => setLoggedIn(true)} className="w-full py-3 rounded-xl btn-gold text-sm font-semibold">Получить код</button>
-          </div>
-        </div>
-      );
-      return (
-        <div className="px-3 pt-3 fade-in">
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-th mb-4">
-            <div className="w-12 h-12 rounded-full gold-grad flex items-center justify-center text-xl">👤</div>
-            <div>
-              <h2 className="font-bold">Пользователь Ravo</h2>
-              <p className="text-xs text-muted">+7 (999) •••-••-42</p>
-            </div>
-          </div>
-          {['Мои заказы','Адреса доставки','Способы оплаты','Настройки'].map(l => (
-            <div key={l} className="flex items-center gap-3 px-4 py-3.5 rounded-xl active:bg-sec">
-              <span className="text-gold text-sm">›</span>
-              <span className="flex-1 text-sm font-medium">{l}</span>
-            </div>
-          ))}
-          <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium">
-            {theme==='dark' ? '☀️  Светлая тема' : '🌙  Тёмная тема'}
-          </button>
-          <button onClick={() => setLoggedIn(false)} className="w-full mt-3 py-3 rounded-xl text-red-500 text-sm font-medium">Выйти</button>
-        </div>
-      );
-    }
-
-    function ProductPage({ product, onAdd, onFav, isFav }) {
-      if (!product) return <div className="text-center py-20">Товар не найден</div>;
-      return (
-        <div className="fade-in">
-          <div className="aspect-square bg-sec relative">
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-            {product.badge && <span className="absolute top-3 left-3 px-2 py-0.5 rounded-lg text-xs font-bold bg-gold text-black">{product.badge}</span>}
-          </div>
-          <div className="px-4 pt-4 pb-6">
-            <div className="flex items-center gap-2 mb-2 text-sm">
-              <span className="text-gold">★ {product.rating}</span>
-              <span className="text-muted">{product.reviews.toLocaleString('ru-RU')} отзывов</span>
-            </div>
-            <h1 className="text-lg font-bold mb-1 leading-snug">{product.name}</h1>
-            <p className="text-sm text-muted mb-4">{product.brand} · {product.category}</p>
-            <div className="flex items-baseline gap-2 mb-5">
-              <span className="text-2xl font-black">{product.price.toLocaleString('ru-RU')} ₽</span>
-              {product.oldPrice && <span className="text-base text-muted line-through">{product.oldPrice.toLocaleString('ru-RU')} ₽</span>}
-            </div>
-            <div className="flex gap-2 mb-5">
-              <button onClick={() => onAdd(product)} className="flex-1 py-3 rounded-xl btn-gold text-sm font-semibold">В корзину</button>
-              <button onClick={() => onFav(product.id)} className={`w-12 h-12 rounded-xl border flex items-center justify-center text-lg ${isFav ? 'border-gold bg-gold/10' : 'border-th'}`}>
-                {isFav ? '❤️' : '🤍'}
-              </button>
-            </div>
-            <div className="space-y-2.5 p-3.5 rounded-2xl bg-sec text-sm">
-              <div>🚚 Бесплатная доставка от 2000 ₽</div>
-              <div>🛡 Гарантия подлинности</div>
-              <div>↩ Возврат 14 дней</div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function App() {
-      const [theme, setTheme] = useLocal('ravo-theme', 'dark');
-      const [page, setPage] = useState('home');
-      const [prevPage, setPrevPage] = useState('home');
-      const [query, setQuery] = useState('');
-      const [cat, setCat] = useState('all');
-      const [cart, setCart] = useLocal('ravo-cart', []);
-      const [favs, setFavs] = useLocal('ravo-favs', []);
-      const [loggedIn, setLoggedIn] = useState(false);
-      const [selected, setSelected] = useState(null);
-
-      useEffect(() => {
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0A0A0A' : '#FFFFFF');
-      }, [theme]);
-
-      const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
-
-      const goTo = (p) => {
-        if (p !== 'product') setPrevPage(page === 'product' ? prevPage : page);
-        setPage(p);
-        window.scrollTo(0, 0);
+      $("#toggle-dark").onclick = function () {
+        state.settings.dark = !state.settings.dark;
+        this.classList.toggle("on", state.settings.dark);
+        if (state.settings.dark) unlockAch("dark_mode");
+        applyTheme();
+        save();
+        haptic();
+      };
+      $("#toggle-anim").onclick = function () {
+        state.settings.anim = !state.settings.anim;
+        this.classList.toggle("on", state.settings.anim);
+        save();
+        haptic();
+      };
+      $("#toggle-compact").onclick = function () {
+        state.settings.compact = !state.settings.compact;
+        this.classList.toggle("on", state.settings.compact);
+        save();
+        haptic();
+      };
+      $("#toggle-notif").onclick = function () {
+        state.settings.notif = !state.settings.notif;
+        this.classList.toggle("on", state.settings.notif);
+        save();
+        haptic();
+      };
+      $("#toggle-haptic").onclick = function () {
+        state.settings.haptic = !state.settings.haptic;
+        this.classList.toggle("on", state.settings.haptic);
+        save();
+        haptic();
+      };
+      $("#reset-settings").onclick = () => {
+        state.settings = { dark: false, anim: true, compact: false, notif: true, haptic: true };
+        applyTheme();
+        save();
+        closeModal("settings-modal");
+        haptic();
       };
 
-      const addToCart = (p) => {
-        setCart(prev => {
-          const ex = prev.find(i => i.product.id === p.id);
-          if (ex) return prev.map(i => i.product.id === p.id ? {...i, qty: i.qty+1} : i);
-          return [...prev, {product: p, qty: 1}];
-        });
-      };
-      const removeFromCart = (id) => setCart(prev => prev.filter(i => i.product.id !== id));
-      const updateQty = (id, qty) => {
-        if (qty < 1) return removeFromCart(id);
-        setCart(prev => prev.map(i => i.product.id === id ? {...i, qty} : i));
-      };
-      const toggleFav = (id) => setFavs(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
-      const cartCount = cart.reduce((s,i) => s + i.qty, 0);
-      const cartTotal = cart.reduce((s,i) => s + i.product.price * i.qty, 0);
-
-      const openProduct = (p) => {
-        setSelected(p);
-        setPrevPage(page);
-        setPage('product');
-        window.scrollTo(0, 0);
+      $("#save-profile").onclick = () => {
+        state.profile.name = $("#edit-name").value.trim() || "Гость";
+        state.profile.phone = $("#edit-phone").value.trim();
+        state.profile.email = $("#edit-email").value.trim();
+        state.profile.avatar = state.profile.name[0]?.toUpperCase() || "R";
+        save();
+        renderProfile();
+        closeModal("edit-modal");
+        haptic();
       };
 
-      const isProduct = page === 'product';
+      $("#detail-close").onclick = () => closeModal("detail-modal");
+      $("#settings-close").onclick = () => closeModal("settings-modal");
+      $("#edit-close").onclick = () => closeModal("edit-modal");
+      $("#ach-close").onclick = () => closeModal("ach-modal");
+      $$(".modal-overlay").forEach(ov => {
+        ov.onclick = (e) => { if (e.target === ov) ov.classList.remove("open"); };
+      });
 
-      return (
-        <div className="min-h-screen flex flex-col bg-main text-main">
-          <TopBar
-            query={query}
-            setQuery={setQuery}
-            theme={theme}
-            toggleTheme={toggleTheme}
-            showBack={isProduct}
-            onBack={() => goTo(prevPage || 'home')}
-            title={selected?.name || 'Товар'}
-          />
+      $("#checkout-btn").onclick = () => {
+        const count = Object.values(state.cart).reduce((a, b) => a + b, 0);
+        if (!count) return;
+        state.orders += 1;
+        state.bonus += count * 10;
+        state.cart = {};
+        save();
+        renderCart();
+        renderBadges();
+        renderProfile();
+        alert(`Заказ оформлен! +${count * 10} ⭐`);
+        haptic();
+      };
 
-          <main className="page-content flex-1">
-            {page === 'home' && <Home products={PRODUCTS} onAdd={addToCart} onFav={toggleFav} favs={favs} onOpen={openProduct} cat={cat} setCat={setCat} query={query} />}
-            {page === 'catalog' && <Catalog products={PRODUCTS} onAdd={addToCart} onFav={toggleFav} favs={favs} onOpen={openProduct} cat={cat} setCat={setCat} />}
-            {page === 'cart' && <Cart cart={cart} updateQty={updateQty} remove={removeFromCart} total={cartTotal} clear={() => setCart([])} setPage={goTo} />}
-            {page === 'favorites' && <Favorites favs={favs} products={PRODUCTS} onAdd={addToCart} onFav={toggleFav} onOpen={openProduct} setPage={goTo} />}
-            {page === 'profile' && <Profile theme={theme} toggleTheme={toggleTheme} loggedIn={loggedIn} setLoggedIn={setLoggedIn} />}
-            {page === 'product' && <ProductPage product={selected} onAdd={addToCart} onFav={toggleFav} isFav={selected && favs.includes(selected.id)} />}
-          </main>
+      setInterval(updateDropTimer, 1000);
 
-          {!isProduct && (
-            <BottomNav page={page} setPage={goTo} cartCount={cartCount} favCount={favs.length} />
-          )}
-        </div>
-      );
+      setTimeout(() => {
+        $("#splash").classList.add("hidden");
+        $("#app").classList.add("ready");
+      }, 2400);
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    init();
   </script>
 </body>
 </html>
-ENDOFFILE
-echo "OK - file updated"
